@@ -44,8 +44,8 @@ func NewMetrics(metricsURL, metricsPrefix string, registry metrics.Registry) *Sq
 
 	metrics := &SquareMetrics{
 		registry: registry,
-		url:      *metricsURL,
-		prefix:   *metricsPrefix,
+		url:      metricsURL,
+		prefix:   metricsPrefix,
 		hostname: hostname,
 	}
 
@@ -61,7 +61,7 @@ func (mb *SquareMetrics) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	metrics := mb.serializeMetrics()
 	raw, err := json.Marshal(metrics)
 	if err != nil {
-		logger.Printf("%s", err)
+		panic(err)
 	}
 	w.Write(raw)
 }
@@ -116,7 +116,7 @@ func (mb *SquareMetrics) postMetrics() {
 	metrics := mb.serializeMetrics()
 	raw, err := json.Marshal(metrics)
 	if err != nil {
-		logger.Printf("%s", err)
+		panic(err)
 	}
 	resp, err := http.Post(mb.url, "application/json", bytes.NewReader(raw))
 	if err == nil {
