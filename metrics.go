@@ -28,7 +28,7 @@ import (
 	"github.com/rcrowley/go-metrics"
 )
 
-// Metrics bridge posts metrics to an HTTP/JSON bridge endpoint
+// SquareMetrics posts metrics to an HTTP/JSON bridge endpoint
 type SquareMetrics struct {
 	registry metrics.Registry
 	url      string
@@ -36,6 +36,7 @@ type SquareMetrics struct {
 	hostname string
 }
 
+// NewMetrics is the entry point for this code
 func NewMetrics(metricsURL, metricsPrefix string, registry metrics.Registry) *SquareMetrics {
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -58,7 +59,7 @@ func NewMetrics(metricsURL, metricsPrefix string, registry metrics.Registry) *Sq
 }
 
 func (mb *SquareMetrics) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	metrics := mb.serializeMetrics()
+	metrics := mb.SerializeMetrics()
 	raw, err := json.Marshal(metrics)
 	if err != nil {
 		panic(err)
@@ -113,7 +114,7 @@ func (mb *SquareMetrics) collectSystemMetrics() {
 }
 
 func (mb *SquareMetrics) postMetrics() {
-	metrics := mb.serializeMetrics()
+	metrics := mb.SerializeMetrics()
 	raw, err := json.Marshal(metrics)
 	if err != nil {
 		panic(err)
@@ -138,7 +139,8 @@ type tuple struct {
 	value interface{}
 }
 
-func (mb *SquareMetrics) serializeMetrics() []map[string]interface{} {
+// SerializeMetrics returns a map of the collected metrics, suitable for JSON marshalling
+func (mb *SquareMetrics) SerializeMetrics() []map[string]interface{} {
 	nvs := []tuple{}
 
 	mb.registry.Each(func(name string, i interface{}) {
