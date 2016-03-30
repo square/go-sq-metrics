@@ -78,38 +78,49 @@ func (mb *SquareMetrics) publishMetrics() {
 func (mb *SquareMetrics) collectSystemMetrics() {
 	var mem runtime.MemStats
 
-	alloc := metrics.GetOrRegisterGauge("runtime.mem.alloc", mb.registry)
-	totalAlloc := metrics.GetOrRegisterGauge("runtime.mem.total-alloc", mb.registry)
-	sys := metrics.GetOrRegisterGauge("runtime.mem.sys", mb.registry)
-	heapAlloc := metrics.GetOrRegisterGauge("runtime.mem.heap.alloc", mb.registry)
-	heapSys := metrics.GetOrRegisterGauge("runtime.mem.heap.sys", mb.registry)
-	heapInUse := metrics.GetOrRegisterGauge("runtime.mem.heap.in-use", mb.registry)
-	stackSys := metrics.GetOrRegisterGauge("runtime.mem.stack.sys", mb.registry)
-	stackInUse := metrics.GetOrRegisterGauge("runtime.mem.stack.in-use", mb.registry)
-	gcPauseTotal := metrics.GetOrRegisterGauge("runtime.mem.gc.pause-total", mb.registry)
-	gcCPUFraction := metrics.GetOrRegisterGaugeFloat64("runtime.mem.gc.cpu-fraction", mb.registry)
-	numGoRoutines := metrics.GetOrRegisterGauge("runtime.goroutines", mb.registry)
-	numCgoCalls := metrics.GetOrRegisterGauge("runtime.cgo-calls", mb.registry)
+	update := func(name string, value uint64) {
+		metrics.GetOrRegisterGauge(name, mb.registry).Update(int64(value))
+	}
 
+	updateFloat := func(name string, value float64) {
+		metrics.GetOrRegisterGaugeFloat64(name, mb.registry).Update(value)
+	}
+
+	sample := metrics.NewExpDecaySample(1028, 0.015)
+	gcHistogram := metrics.GetOrRegisterHistogram("runtime.mem.gc.duration", mb.registry, sample)
+
+	var observedPauses uint32 = 0
 	for range time.Tick(1 * time.Second) {
 		runtime.ReadMemStats(&mem)
 
-		alloc.Update(int64(mem.Alloc))
-		totalAlloc.Update(int64(mem.TotalAlloc))
-		sys.Update(int64(mem.Sys))
+		update("runtime.mem.alloc", mem.Alloc)
+		update("runtime.mem.total-alloc", mem.TotalAlloc)
+		update("runtime.mem.sys", mem.Sys)
+		update("runtime.mem.lookups", mem.Lookups)
+		update("runtime.mem.mallocs", mem.Mallocs)
+		update("runtime.mem.frees", mem.Frees)
 
-		heapAlloc.Update(int64(mem.HeapAlloc))
-		heapSys.Update(int64(mem.HeapSys))
-		heapInUse.Update(int64(mem.HeapInuse))
+		update("runtime.mem.heap.alloc", mem.HeapAlloc)
+		update("runtime.mem.heap.sys", mem.HeapSys)
+		update("runtime.mem.heap.idle", mem.HeapIdle)
+		update("runtime.mem.heap.inuse", mem.HeapInuse)
+		update("runtime.mem.heap.released", mem.HeapReleased)
+		update("runtime.mem.heap.objects", mem.HeapObjects)
 
-		stackSys.Update(int64(mem.StackSys))
-		stackInUse.Update(int64(mem.StackInuse))
+		update("runtime.mem.stack.inuse", mem.StackInuse)
+		update("runtime.mem.stack.sys", mem.StackSys)
+		update("runtime.mem.stack.sys", mem.StackSys)
 
-		gcPauseTotal.Update(int64(mem.PauseTotalNs))
-		gcCPUFraction.Update(mem.GCCPUFraction)
+		update("runtime.goroutines", uint64(runtime.NumGoroutine()))
+		update("runtime.cgo-calls", uint64(runtime.NumCgoCall()))
 
-		numGoRoutines.Update(int64(runtime.NumGoroutine()))
-		numCgoCalls.Update(int64(runtime.NumCgoCall()))
+		update("runtime.mem.gc.num-gc", uint64(mem.NumGC))
+		updateFloat("runtime.mem.gc.cpu-fraction", mem.GCCPUFraction)
+
+		// Update histogram of GC pauses
+		for ; observedPauses < mem.NumGC; observedPauses++ {
+			gcHistogram.Update(int64(mem.PauseNs[(observedPauses+1)%256]))
+		}
 	}
 }
 
