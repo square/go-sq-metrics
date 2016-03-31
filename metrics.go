@@ -162,6 +162,18 @@ func (mb *SquareMetrics) SerializeMetrics() []map[string]interface{} {
 			nvs = append(nvs, tuple{name, metric.Value()})
 		case metrics.GaugeFloat64:
 			nvs = append(nvs, tuple{name, metric.Value()})
+		case metrics.Histogram:
+			histogram := metric.Snapshot()
+			nvs = append(nvs, []tuple{
+				{fmt.Sprintf("%s.count", name), histogram.Count()},
+				{fmt.Sprintf("%s.min", name), histogram.Min()},
+				{fmt.Sprintf("%s.max", name), histogram.Max()},
+				{fmt.Sprintf("%s.mean", name), histogram.Mean()},
+				{fmt.Sprintf("%s.50-percentile", name), histogram.Percentile(0.5)},
+				{fmt.Sprintf("%s.75-percentile", name), histogram.Percentile(0.75)},
+				{fmt.Sprintf("%s.95-percentile", name), histogram.Percentile(0.95)},
+				{fmt.Sprintf("%s.99-percentile", name), histogram.Percentile(0.99)},
+			}...)
 		case metrics.Timer:
 			timer := metric.Snapshot()
 			nvs = append(nvs, []tuple{
