@@ -169,16 +169,10 @@ func (mb *SquareMetrics) SerializeMetrics() []map[string]interface{} {
 				{fmt.Sprintf("%s.min", name), timer.Min()},
 				{fmt.Sprintf("%s.max", name), timer.Max()},
 				{fmt.Sprintf("%s.mean", name), timer.Mean()},
-				{fmt.Sprintf("%s.std-dev", name), timer.StdDev()},
-				{fmt.Sprintf("%s.one-minute", name), timer.Rate1()},
-				{fmt.Sprintf("%s.five-minute", name), timer.Rate5()},
-				{fmt.Sprintf("%s.fifteen-minute", name), timer.Rate15()},
-				{fmt.Sprintf("%s.mean-rate", name), timer.RateMean()},
 				{fmt.Sprintf("%s.50-percentile", name), timer.Percentile(0.5)},
 				{fmt.Sprintf("%s.75-percentile", name), timer.Percentile(0.75)},
 				{fmt.Sprintf("%s.95-percentile", name), timer.Percentile(0.95)},
 				{fmt.Sprintf("%s.99-percentile", name), timer.Percentile(0.99)},
-				{fmt.Sprintf("%s.999-percentile", name), timer.Percentile(0.999)},
 			}...)
 		}
 	})
