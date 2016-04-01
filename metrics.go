@@ -109,7 +109,6 @@ func (mb *SquareMetrics) collectSystemMetrics() {
 
 		update("runtime.mem.stack.inuse", mem.StackInuse)
 		update("runtime.mem.stack.sys", mem.StackSys)
-		update("runtime.mem.stack.sys", mem.StackSys)
 
 		update("runtime.goroutines", uint64(runtime.NumGoroutine()))
 		update("runtime.cgo-calls", uint64(runtime.NumCgoCall()))
