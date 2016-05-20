@@ -34,10 +34,11 @@ type SquareMetrics struct {
 	url      string
 	prefix   string
 	hostname string
+	interval time.Duration
 }
 
 // NewMetrics is the entry point for this code
-func NewMetrics(metricsURL, metricsPrefix string, registry metrics.Registry) *SquareMetrics {
+func NewMetrics(metricsURL, metricsPrefix string, interval time.Duration, registry metrics.Registry) *SquareMetrics {
 	hostname, err := os.Hostname()
 	if err != nil {
 		panic(err)
@@ -48,6 +49,7 @@ func NewMetrics(metricsURL, metricsPrefix string, registry metrics.Registry) *Sq
 		url:      metricsURL,
 		prefix:   metricsPrefix,
 		hostname: hostname,
+		interval: interval,
 	}
 
 	if metricsURL != "" {
@@ -69,7 +71,7 @@ func (mb *SquareMetrics) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Publish metrics to bridge
 func (mb *SquareMetrics) publishMetrics() {
-	for range time.Tick(1 * time.Second) {
+	for range time.Tick(mb.interval) {
 		mb.postMetrics()
 	}
 }
@@ -89,8 +91,8 @@ func (mb *SquareMetrics) collectSystemMetrics() {
 	sample := metrics.NewExpDecaySample(1028, 0.015)
 	gcHistogram := metrics.GetOrRegisterHistogram("runtime.mem.gc.duration", mb.registry, sample)
 
-	var observedPauses uint32 = 0
-	for range time.Tick(1 * time.Second) {
+	var observedPauses uint32
+	for range time.Tick(mb.interval) {
 		runtime.ReadMemStats(&mem)
 
 		update("runtime.mem.alloc", mem.Alloc)
