@@ -32,7 +32,7 @@ import (
 
 // SquareMetrics posts metrics to an HTTP/JSON bridge endpoint
 type SquareMetrics struct {
-	registry metrics.Registry
+	Registry metrics.Registry
 	url      string
 	prefix   string
 	hostname string
@@ -49,7 +49,7 @@ func NewMetrics(metricsURL, metricsPrefix string, client *http.Client, interval 
 	}
 
 	metrics := &SquareMetrics{
-		registry: registry,
+		Registry: registry,
 		url:      metricsURL,
 		prefix:   metricsPrefix,
 		hostname: hostname,
@@ -90,15 +90,15 @@ func (mb *SquareMetrics) collectSystemMetrics() {
 	var mem runtime.MemStats
 
 	update := func(name string, value uint64) {
-		metrics.GetOrRegisterGauge(name, mb.registry).Update(int64(value))
+		metrics.GetOrRegisterGauge(name, mb.Registry).Update(int64(value))
 	}
 
 	updateFloat := func(name string, value float64) {
-		metrics.GetOrRegisterGaugeFloat64(name, mb.registry).Update(value)
+		metrics.GetOrRegisterGaugeFloat64(name, mb.Registry).Update(value)
 	}
 
 	sample := metrics.NewExpDecaySample(1028, 0.015)
-	gcHistogram := metrics.GetOrRegisterHistogram("runtime.mem.gc.duration", mb.registry, sample)
+	gcHistogram := metrics.GetOrRegisterHistogram("runtime.mem.gc.duration", mb.Registry, sample)
 
 	var observedPauses uint32
 	for range time.Tick(mb.interval) {
@@ -165,7 +165,7 @@ type tuple struct {
 func (mb *SquareMetrics) SerializeMetrics() []map[string]interface{} {
 	nvs := []tuple{}
 
-	mb.registry.Each(func(name string, i interface{}) {
+	mb.Registry.Each(func(name string, i interface{}) {
 		switch metric := i.(type) {
 		case metrics.Counter:
 			nvs = append(nvs, tuple{name, metric.Count()})
