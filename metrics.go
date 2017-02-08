@@ -21,13 +21,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"runtime"
 	"time"
 
 	"github.com/rcrowley/go-metrics"
+	log "github.com/Sirupsen/logrus"
 )
 
 // SquareMetrics posts metrics to an HTTP/JSON bridge endpoint
@@ -80,7 +80,7 @@ func (mb *SquareMetrics) publishMetrics() {
 	for range time.Tick(mb.interval) {
 		err := mb.postMetrics()
 		if err != nil && err != io.EOF {
-			mb.logger.Printf("error reporting metrics: %s", err)
+			mb.logger.WithError(err).Warn("reporting metrics")
 		}
 	}
 }
